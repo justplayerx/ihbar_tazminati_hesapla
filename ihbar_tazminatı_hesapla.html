@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İhbar Tazminatı Hesaplama</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .card {
+            background: #16213e;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #e0e0e0;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #0f3460;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            background: #1a1a2e;
+            color: #ffffff;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+
+        input::placeholder {
+            color: #666;
+        }
+
+        input.error {
+            border-color: #e74c3c;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-pdf {
+            background: linear-gradient(135deg, #e94560 0%, #c23152 100%);
+        }
+
+        .btn-pdf:hover {
+            box-shadow: 0 5px 20px rgba(233, 69, 96, 0.4);
+        }
+
+        .results {
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            background: #0f3460;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #e94560;
+        }
+
+        .result-item.total {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .result-label {
+            color: #b0b0b0;
+            font-weight: 500;
+        }
+
+        .result-item.total .result-label {
+            color: white;
+        }
+
+        .result-value {
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .result-item.total .result-value {
+            color: white;
+        }
+
+        .gv-detail {
+            margin-top: 20px;
+            padding: 15px;
+            background: #2a2a4a;
+            border-radius: 8px;
+            border: 1px solid #e94560;
+        }
+
+        .gv-detail h3 {
+            color: #e94560;
+            margin-bottom: 15px;
+            font-size: 1em;
+        }
+
+        .gv-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed #e94560;
+            color: #e0e0e0;
+        }
+
+        .gv-row:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            color: #e94560;
+        }
+
+        .gv-aciklama {
+            font-size: 0.85em;
+            color: #888;
+            margin-top: 3px;
+        }
+
+        .error-msg {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .info-box {
+            background: #0f3460;
+            border: 1px solid #533483;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .info-box-sol {
+            flex: 1;
+        }
+
+        .info-box-sag {
+            flex: 1;
+            text-align: right;
+            font-size: 0.8em;
+            color: #aaa;
+            font-style: italic;
+            border-left: 1px solid #533483;
+            padding-left: 20px;
+        }
+
+        .info-box h3 {
+            color: #e94560;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .info-box ul {
+            color: #e0e0e0;
+            font-size: 0.9em;
+            padding-left: 20px;
+        }
+
+        .info-box li {
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .result-item {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>İhbar Tazminatı Hesaplama</h1>
+
+        <div class="info-box">
+            <div class="info-box-sol">
+                <h3>2026 Yılı İhbar Süresi Kuralları</h3>
+                <ul>
+                    <li>0 - 180 gün çalışma: <strong>2 hafta</strong> ihbar süresi</li>
+                    <li>181 - 540 gün çalışma: <strong>4 hafta</strong> ihbar süresi</li>
+                    <li>541 - 1080 gün çalışma: <strong>6 hafta</strong> ihbar süresi</li>
+                    <li>1081+ gün çalışma: <strong>8 hafta</strong> ihbar süresi</li>
+                </ul>
+            </div>
+            <div class="info-box-sag">
+                Bu uygulama yapay zeka desteği ile hobi amaçlı tasarlanmıştır. Lütfen sonuçları kontrol ederek kullanınız.
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Giriş Bilgileri</h2>
+            <div class="form-group">
+                <label for="gunSayisi">Toplam Çalışma Süresi (Gün)</label>
+                <input type="number" id="gunSayisi" placeholder="Örn: 720" min="1">
+                <div class="error-msg" id="gunError">Lütfen geçerli bir gün sayısı giriniz</div>
+            </div>
+            <div class="form-group">
+                <label for="giymisUcret">Giydirilmiş Brüt Aylık Ücret (TL)</label>
+                <input type="number" id="giymisUcret" placeholder="Örn: 25000" min="1" step="0.01">
+                <div class="error-msg" id="ucretError">Lütfen geçerli bir ücret giriniz</div>
+            </div>
+            <button class="btn" onclick="hesapla()">HESAPLA</button>
+            <button class="btn btn-pdf" onclick="pdfIndir()" style="margin-top: 10px; display: none;" id="pdfBtn">PDF RAPOR İNDİR</button>
+        </div>
+
+        <div class="card results" id="sonuclar">
+            <h2>Hesaplama Sonuçları</h2>
+
+            <div class="result-item">
+                <span class="result-label">Çalışma Süresi</span>
+                <span class="result-value" id="resCalismaSuresi">-</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">Çalışma Süresi (Yıl / Ay / Gün)</span>
+                <span class="result-value" id="resYilAyGun">-</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">İhbar Süresi</span>
+                <span class="result-value" id="resIhbarSuresi">-</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">Haftalık Ücret</span>
+                <span class="result-value" id="resHaftalikUcret">-</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">Hakedilen Brüt İhbar Tazminatı</span>
+                <span class="result-value" id="resBrutIhbar">-</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">2026 Gelir Vergisi Kesintisi</span>
+                <span class="result-value" id="resGV">-</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">Damga Vergisi Kesintisi (%0,759)</span>
+                <span class="result-value" id="resDV">-</span>
+            </div>
+            <div class="result-item total">
+                <span class="result-label">Net Ödenecek İhbar Tazminatı</span>
+                <span class="result-value" id="resNet">-</span>
+            </div>
+
+            <div class="gv-detail" id="gvDetay">
+                <h3>Gelir Vergisi Dilim Detayları</h3>
+                <div id="gvDetayIcerik"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function formatPara(miktar) {
+            return new Intl.NumberFormat('tr-TR', {
+                style: 'currency',
+                currency: 'TRY',
+                minimumFractionDigits: 2
+            }).format(miktar);
+        }
+
+        function gunleriParcala(toplamGun) {
+            let yil = Math.floor(toplamGun / 360);
+            let kalanGun = toplamGun % 360;
+            let ay = Math.floor(kalanGun / 30);
+            let gun = kalanGun % 30;
+            return { yil, ay, gun };
+        }
+
+        function ihbarSuresiHesapla(toplamGun) {
+            if (toplamGun <= 180) return 2;
+            if (toplamGun <= 540) return 4;
+            if (toplamGun <= 1080) return 6;
+            return 8;
+        }
+
+        function gelirVergisiHesapla(matrah) {
+            let gv = 0;
+            let dilimler = [];
+
+            if (matrah <= 190000) {
+                gv = matrah * 15 / 100;
+                dilimler.push({ dilim: '1. Dilim (%15)', aciklama: '190.000 TL\'ye kadar', matrah: matrah, vergi: gv });
+            } else if (matrah <= 400000) {
+                gv = 28500 + ((matrah - 190000) * 20 / 100);
+                dilimler.push({ dilim: '1. Dilim (%15)', aciklama: '190.000 TL\'ye kadar', matrah: 190000, vergi: 28500 });
+                dilimler.push({ dilim: '2. Dilim (%20)', aciklama: '400.000 TL\'nin 190.000 TL\'si için 28.500 TL, fazlası', matrah: matrah - 190000, vergi: (matrah - 190000) * 20 / 100 });
+            } else if (matrah <= 1500000) {
+                gv = 70500 + ((matrah - 400000) * 27 / 100);
+                dilimler.push({ dilim: '1. Dilim (%15)', aciklama: '190.000 TL\'ye kadar', matrah: 190000, vergi: 28500 });
+                dilimler.push({ dilim: '2. Dilim (%20)', aciklama: '400.000 TL\'nin 190.000 TL\'si için 28.500 TL, fazlası', matrah: 210000, vergi: 42000 });
+                dilimler.push({ dilim: '3. Dilim (%27)', aciklama: '1.500.000 TL\'nin 400.000 TL\'si için 70.500 TL, fazlası', matrah: matrah - 400000, vergi: (matrah - 400000) * 27 / 100 });
+            } else if (matrah <= 5300000) {
+                gv = 367500 + ((matrah - 1500000) * 35 / 100);
+                dilimler.push({ dilim: '1. Dilim (%15)', aciklama: '190.000 TL\'ye kadar', matrah: 190000, vergi: 28500 });
+                dilimler.push({ dilim: '2. Dilim (%20)', aciklama: '400.000 TL\'nin 190.000 TL\'si için 28.500 TL, fazlası', matrah: 210000, vergi: 42000 });
+                dilimler.push({ dilim: '3. Dilim (%27)', aciklama: '1.500.000 TL\'nin 400.000 TL\'si için 70.500 TL, fazlası', matrah: 1100000, vergi: 297000 });
+                dilimler.push({ dilim: '4. Dilim (%35)', aciklama: '5.300.000 TL\'nin 1.500.000 TL\'si için 367.500 TL, fazlası', matrah: matrah - 1500000, vergi: (matrah - 1500000) * 35 / 100 });
+            } else {
+                gv = 1737000 + ((matrah - 5300000) * 40 / 100);
+                dilimler.push({ dilim: '1. Dilim (%15)', aciklama: '190.000 TL\'ye kadar', matrah: 190000, vergi: 28500 });
+                dilimler.push({ dilim: '2. Dilim (%20)', aciklama: '400.000 TL\'nin 190.000 TL\'si için 28.500 TL, fazlası', matrah: 210000, vergi: 42000 });
+                dilimler.push({ dilim: '3. Dilim (%27)', aciklama: '1.500.000 TL\'nin 400.000 TL\'si için 70.500 TL, fazlası', matrah: 1100000, vergi: 297000 });
+                dilimler.push({ dilim: '4. Dilim (%35)', aciklama: '5.300.000 TL\'nin 1.500.000 TL\'si için 367.500 TL, fazlası', matrah: 3800000, vergi: 1330000 });
+                dilimler.push({ dilim: '5. Dilim (%40)', aciklama: '5.300.000 TL\'den fazlasının 5.300.000 TL\'si için 1.737.500 TL, fazlası', matrah: matrah - 5300000, vergi: (matrah - 5300000) * 40 / 100 });
+            }
+
+            return { gv, dilimler };
+        }
+
+        function hesapla() {
+            let gunSayisi = document.getElementById('gunSayisi').value;
+            let giymisUcret = document.getElementById('giymisUcret').value;
+
+            let gunError = document.getElementById('gunError');
+            let ucretError = document.getElementById('ucretError');
+
+            gunError.style.display = 'none';
+            ucretError.style.display = 'none';
+            document.getElementById('gunSayisi').classList.remove('error');
+            document.getElementById('giymisUcret').classList.remove('error');
+
+            let valid = true;
+
+            if (!gunSayisi || isNaN(gunSayisi) || gunSayisi <= 0) {
+                gunError.style.display = 'block';
+                document.getElementById('gunSayisi').classList.add('error');
+                valid = false;
+            }
+
+            if (!giymisUcret || isNaN(giymisUcret) || giymisUcret <= 0) {
+                ucretError.style.display = 'block';
+                document.getElementById('giymisUcret').classList.add('error');
+                valid = false;
+            }
+
+            if (!valid) return;
+
+            gunSayisi = parseInt(gunSayisi);
+            giymisUcret = parseFloat(giymisUcret);
+
+            let parca = gunleriParcala(gunSayisi);
+            let ihbarSuresi = ihbarSuresiHesapla(gunSayisi);
+            let haftalikUcret = (giymisUcret / 30) * 7;
+            let brutIhbar = ihbarSuresi * haftalikUcret;
+
+            let gvSonuc = gelirVergisiHesapla(brutIhbar);
+            let gv = gvSonuc.gv;
+            let dilimler = gvSonuc.dilimler;
+            let dv = brutIhbar * 0.00759;
+            let net = brutIhbar - gv - dv;
+
+            document.getElementById('resCalismaSuresi').textContent = gunSayisi + ' gün';
+            document.getElementById('resYilAyGun').textContent = parca.yil + ' Yıl, ' + parca.ay + ' Ay, ' + parca.gun + ' Gün';
+            document.getElementById('resIhbarSuresi').textContent = ihbarSuresi + ' hafta';
+            document.getElementById('resHaftalikUcret').textContent = formatPara(haftalikUcret);
+            document.getElementById('resBrutIhbar').textContent = formatPara(brutIhbar);
+            document.getElementById('resGV').textContent = formatPara(gv);
+            document.getElementById('resDV').textContent = formatPara(dv);
+            document.getElementById('resNet').textContent = formatPara(net);
+
+            let gvDetayHtml = '';
+            dilimler.forEach(function(d) {
+                gvDetayHtml += '<div class="gv-row"><div><strong>' + d.dilim + '</strong><div class="gv-aciklama">' + d.aciklama + '</div></div><span>' + formatPara(d.vergi) + '</span></div>';
+            });
+            gvDetayHtml += '<div class="gv-row"><span>Toplam GV</span><span>' + formatPara(gv) + '</span></div>';
+            document.getElementById('gvDetayIcerik').innerHTML = gvDetayHtml;
+
+            document.getElementById('sonuclar').classList.add('show');
+            document.getElementById('sonuclar').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('pdfBtn').style.display = 'block';
+        }
+
+        function pdfIndir() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+
+            let y = 18;
+
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(13);
+            doc.setFont('helvetica', 'bold');
+            doc.text('IHBAR TAZMINATI RAPORU', 105, y, { align: 'center' });
+
+            y += 4;
+            doc.setDrawColor(0, 0, 0);
+            doc.setLineWidth(0.4);
+            doc.line(20, y, 190, y);
+
+            let gunSayisi = document.getElementById('gunSayisi').value;
+            let giymisUcret = document.getElementById('giymisUcret').value;
+            let parca = gunleriParcala(parseInt(gunSayisi));
+            let ihbarSuresi = ihbarSuresiHesapla(parseInt(gunSayisi));
+            let haftalikUcret = (parseFloat(giymisUcret) / 30) * 7;
+            let brutIhbar = ihbarSuresi * haftalikUcret;
+            let gvSonuc = gelirVergisiHesapla(brutIhbar);
+            let gv = gvSonuc.gv;
+            let dv = brutIhbar * 0.00759;
+            let net = brutIhbar - gv - dv;
+
+            y += 8;
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.text('GIRIS BILGILERI', 20, y);
+
+            y += 4;
+            doc.setLineWidth(0.15);
+            doc.line(20, y, 80, y);
+
+            let tabloGiris = [
+                ['Toplam Calisma Suresi', gunSayisi + ' gun'],
+                ['Giydirilmis Brut Aylik Ucret', formatParaBul(parseFloat(giymisUcret))],
+                ['Calisma Suresi (Yil/Ay/Gun)', parca.yil + ' Yil, ' + parca.ay + ' Ay, ' + parca.gun + ' Gun']
+            ];
+
+            y += 5;
+            doc.setFontSize(8);
+            tabloGiris.forEach(function(row) {
+                doc.setFont('helvetica', 'normal');
+                doc.text(row[0], 22, y);
+                doc.setFont('helvetica', 'bold');
+                doc.text(row[1], 100, y);
+                y += 5;
+            });
+
+            y += 6;
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.text('HESAPLAMA SONUCLARI', 20, y);
+
+            y += 4;
+            doc.setLineWidth(0.15);
+            doc.line(20, y, 100, y);
+
+            let tabloSonuc = [
+                ['Ihbar Suresi', ihbarSuresi + ' hafta'],
+                ['Haftalik Ucret', formatParaBul(haftalikUcret)],
+                ['Hakedilen Brut Ihbar Tazminati', formatParaBul(brutIhbar)],
+                ['2026 Gelir Vergisi Kesintisi', formatParaBul(gv)],
+                ['Damga Vergisi Kesintisi (%0,759)', formatParaBul(dv)]
+            ];
+
+            y += 5;
+            doc.setFontSize(8);
+            tabloSonuc.forEach(function(row) {
+                doc.setFont('helvetica', 'normal');
+                doc.text(row[0], 22, y);
+                doc.setFont('helvetica', 'bold');
+                doc.text(row[1], 100, y);
+                y += 5;
+            });
+
+            y += 2;
+            doc.setLineWidth(0.3);
+            doc.line(20, y, 190, y);
+            y += 5;
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.text('NET ODENECEK IHBAR TAZMINATI', 22, y);
+            doc.text(formatParaBul(net), 100, y);
+
+            y += 10;
+            doc.setFontSize(9);
+            doc.text('GELIR VERGISI DILIM DETAYLARI', 20, y);
+
+            y += 4;
+            doc.setLineWidth(0.15);
+            doc.line(20, y, 120, y);
+
+            y += 5;
+            doc.setFontSize(7);
+            gvSonuc.dilimler.forEach(function(d) {
+                doc.setFont('helvetica', 'bold');
+                doc.text(d.dilim, 22, y);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(100, 100, 100);
+                let aciklama = d.aciklama.length > 50 ? d.aciklama.substring(0, 47) + '...' : d.aciklama;
+                doc.text(aciklama, 55, y);
+                doc.setTextColor(0, 0, 0);
+                doc.text(formatParaBul(d.vergi), 145, y);
+                y += 5;
+            });
+
+            y += 2;
+            doc.setLineWidth(0.15);
+            doc.line(20, y, 190, y);
+            y += 5;
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Toplam GV:', 22, y);
+            doc.text(formatParaBul(gv), 145, y);
+
+            doc.save('ihbar_tazminati_raporu.pdf');
+        }
+
+        function formatParaBul(miktar) {
+            return new Intl.NumberFormat('tr-TR', {
+                style: 'currency',
+                currency: 'TRY',
+                minimumFractionDigits: 2
+            }).format(miktar);
+        }
+
+        document.getElementById('gunSayisi').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') hesapla();
+        });
+
+        document.getElementById('giymisUcret').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') hesapla();
+        });
+    </script>
+</body>
+</html>
